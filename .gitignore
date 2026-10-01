@@ -2,3 +2,7 @@ azure_names.txt
 .venv/
 .env
 ndw/
+__pycache__/
+.pytest_cache/
+.DS_Store
+.env.bak

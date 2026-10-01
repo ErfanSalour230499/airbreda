@@ -1,0 +1,1 @@
+{"rows": 7, "in_sample": true, "r2": 0.641, "mae": 1.35, "trained_at": "2026-10-01T19:23+00:00", "features": ["total_intensity_veh_per_hr", "hour_of_day"]}

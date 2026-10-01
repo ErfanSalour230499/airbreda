@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>AirBreda</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#101828;--mute:#667085;--line:#e4e7ec}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 56px}
+header{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:18px}
+h1{margin:0 0 6px;font-size:1.9rem;letter-spacing:-.02em} h2{margin:0 0 4px;font-size:1.05rem}
+.sub{color:var(--mute);max-width:660px;line-height:1.5;margin:0}
+.right{text-align:right}
+.pill{display:inline-block;padding:6px 14px;border-radius:999px;font-size:.85rem;font-weight:600;background:#fff;border:1px solid var(--line)}
+.pill.ok{color:#067647;background:#ecfdf3;border-color:#abefc6}
+.pill.bad{color:#b42318;background:#fef3f2;border-color:#fecdca}
+.small{color:var(--mute);font-size:.78rem;margin-top:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.note{color:var(--mute);font-size:.82rem;line-height:1.45}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:center;border-width:2px}
+.hero.good{background:linear-gradient(135deg,#ecfdf3,#fff 60%);border-color:#abefc6}
+.hero.mid{background:linear-gradient(135deg,#fffaeb,#fff 60%);border-color:#fedf89}
+.hero.bad{background:linear-gradient(135deg,#fef3f2,#fff 60%);border-color:#fecdca}
+.verdict{display:flex;gap:16px;align-items:flex-start}
+.dot{flex:none;width:56px;height:56px;border-radius:50%;color:#fff;font-size:1.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;background:#98a2b3}
+.lvl{font-size:1.5rem;font-weight:800}
+.sent{margin:6px 0 12px;line-height:1.5}
+.rk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.meter{flex:1;min-width:120px;height:10px;border-radius:5px;background:#eaecf0;overflow:hidden}
+.meter>i{display:block;height:100%;border-radius:5px;background:#12b76a;transition:width .6s}
+.gauges{display:flex;gap:10px;justify-content:center}
+.gwrap{flex:1;max-width:240px;text-align:center}
+.gwrap svg{width:100%;height:auto}
+.glabel{font-weight:600;font-size:.9rem;margin-top:-2px}
+.gv{font-size:26px;font-weight:800;fill:#101828}.gu{font-size:11px;fill:#667085}.tick{font-size:10px;fill:#667085}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.tot{font-size:1.6rem;font-weight:800}.tot small{font-size:.85rem;font-weight:400;color:var(--mute)}
+.map{width:100%;height:auto;display:block;margin-top:8px}
+.car{animation:flow 2s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-23}}
+.mlabel{font-size:13px;font-weight:700}.msub{font-size:11px;fill:#667085}.city{font-size:15px;font-weight:700;fill:#3730a3}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+.scard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
+.sbig{font-size:1.6rem;font-weight:800;margin:4px 0}.sbig small{font-size:.8rem;font-weight:400;color:var(--mute)}
+.share{height:7px;border-radius:4px;background:#eaecf0;margin:6px 0}.share>i{display:block;height:100%;border-radius:4px}
+.chartbox{position:relative;height:340px;margin-top:10px}
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.sdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+details{margin-top:6px}summary{cursor:pointer;font-weight:600}
+details p{color:var(--mute);line-height:1.55;font-size:.9rem}
+footer a{color:#2563eb;margin-right:14px;font-size:.9rem}
+@media(max-width:760px){.hero{grid-template-columns:1fr}.right{text-align:left}}
+@media(prefers-reduced-motion:reduce){.car{animation:none}}
+</style></head><body><main>
+
+<header>
+ <div><h1>AirBreda</h1>
+  <p class="sub">Does traffic on the A27 near Breda push up nitrogen dioxide (NO&#8322;)? Live data from air-quality station NL10240 and four NDW traffic sensors, plus a simple model that predicts NO&#8322; from traffic.</p></div>
+ <div class="right"><span id="pill" class="pill">Loading...</span><div class="small" id="updated"></div></div>
+</header>
+
+<section class="card hero" id="hero">
+ <div class="verdict"><div class="dot" id="dot">?</div>
+  <div><div class="lvl" id="lvl">...</div><p class="sent" id="sentence"></p>
+   <div class="rk"><span class="note">Exceedance risk (model)</span><div class="meter"><i id="riskBar" style="width:0"></i></div><b id="riskVal"></b></div></div></div>
+ <div class="gauges">
+  <div class="gwrap"><svg id="g1" viewBox="0 0 220 158"></svg><div class="glabel">Measured now</div></div>
+  <div class="gwrap"><svg id="g2" viewBox="0 0 220 158"></svg><div class="glabel">Model prediction</div></div>
+ </div>
+</section>
+
+<section class="card">
+ <div class="top"><div><h2>Traffic at the interchange</h2>
+  <div class="note">Schematic, not to scale. Dots move faster and get bigger when traffic is heavier.</div></div>
+  <div class="tot"><span id="total">...</span> <small>veh/h in total</small></div></div>
+ <svg class="map" id="map" viewBox="0 0 720 290"></svg>
+ <div class="grid4" id="sites"></div>
+</section>
+
+<section class="card">
+ <h2>Last 24 hours: traffic and NO&#8322; together</h2>
+ <div class="note">Coloured bars = traffic per site (left axis). Black line = measured NO&#8322;, red dashed line = model prediction (right axis). Traffic collection started later than NO&#8322;, so earlier hours only show NO&#8322;. Predictions for hours the model was trained on are in-sample.</div>
+ <div class="chartbox"><canvas id="chart"></canvas></div>
+</section>
+
+<section class="status" id="status"></section>
+
+<section class="card" style="margin-top:16px">
+ <details><summary>How to read this page</summary>
+  <p><b>NO&#8322;</b> is a gas from engines. <b>Low</b> is under 20 &micro;g/m&sup3;, <b>elevated</b> is 20 to 40, and above 40 passes the EU annual limit value, which we use here only as an hourly reference. <b>Traffic</b> is the hourly mean number of vehicles per hour at four sensors (hrl and hrr are the two A27 directions, vwd and vwa are the slip roads). The <b>model</b> is a linear regression on total traffic and hour of day. <b>Exceedance risk</b> is a 0 to 1 score, not a calibrated probability. With so little training data, treat predictions as a demonstration of the pipeline, not as a forecast.</p></details>
+</section>
+
+<footer><a href="/site/hrl">/site/hrl</a><a href="/history">/history</a><a href="/health">/health</a></footer>
+</main>
+
+<script>
+const SITES=["hrl","hrr","vwd","vwa"],TZ="Europe/Amsterdam",REF=40,MAXG=80;
+const C={hrl:"#2563eb",hrr:"#7c3aed",vwd:"#f59e0b",vwa:"#14b8a6"};
+const COL={good:"#12b76a",mid:"#f79009",bad:"#f04438"};
+const NAMES={hrl:"A27 mainline, direction 1",hrr:"A27 mainline, direction 2",vwd:"Entry slip road (leaving Breda)",vwa:"Exit slip road (entering Breda)"};
+const $=id=>document.getElementById(id);
+const num=(x,d=1)=>(x===null||x===undefined)?"n/a":Number(x).toFixed(d);
+const int=x=>Math.round(x).toLocaleString("en");
+const clock=iso=>new Date(iso).toLocaleTimeString("en-GB",{timeZone:TZ,hour:"2-digit",minute:"2-digit"});
+const stamp=iso=>new Date(iso).toLocaleString("en-GB",{timeZone:TZ,day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+const ageMin=iso=>(Date.now()-new Date(iso))/60000;
+const ago=iso=>{const m=Math.round(ageMin(iso));return m<60?m+" min ago":Math.floor(m/60)+" h "+(m%60)+" min ago";};
+let chart=null;
+
+function level(v){return v<20?["Low","good","\u2713"]:v<REF?["Elevated","mid","!"]:["Above the 40 reference","bad","!"];}
+
+function polar(cx,cy,r,a){return [cx+r*Math.cos(a),cy-r*Math.sin(a)];}
+function arc(cx,cy,r,a0,a1){const p=polar(cx,cy,r,a0),q=polar(cx,cy,r,a1);return "M"+p[0]+","+p[1]+" A"+r+","+r+" 0 0 1 "+q[0]+","+q[1];}
+function gauge(id,value){
+  const cx=110,cy=108,r=82,A=v=>Math.PI*(1-Math.min(Math.max(v,0),MAXG)/MAXG);
+  let s="";
+  [[0,20,COL.good],[20,REF,COL.mid],[REF,MAXG,COL.bad]].forEach(z=>{
+    s+='<path d="'+arc(cx,cy,r,A(z[0]),A(z[1]))+'" stroke="'+z[2]+'" stroke-width="16" fill="none"/>';});
+  s+='<text class="tick" x="'+(cx-r)+'" y="'+(cy+18)+'" text-anchor="middle">0</text>';
+  s+='<text class="tick" x="'+(cx+r)+'" y="'+(cy+18)+'" text-anchor="middle">80</text>';
+  s+='<text class="tick" x="'+cx+'" y="'+(cy-r-13)+'" text-anchor="middle">40</text>';
+  if(value===null||value===undefined){s+='<text class="gv" x="'+cx+'" y="140" text-anchor="middle">n/a</text>';}
+  else{
+    const p=polar(cx,cy,r-12,A(value));
+    s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="#101828" stroke-width="4" stroke-linecap="round"/><circle cx="'+cx+'" cy="'+cy+'" r="7" fill="#101828"/>';
+    s+='<text class="gv" x="'+cx+'" y="140" text-anchor="middle">'+num(value)+'</text>';
+  }
+  s+='<text class="gu" x="'+cx+'" y="154" text-anchor="middle">\u00b5g/m\u00b3</text>';
+  $(id).innerHTML=s;
+}
+
+function drawMap(sites){
+  const by={};sites.forEach(s=>by[s.site_id]=s);
+  const mx=Math.max.apply(null,sites.map(s=>s.intensity_veh_per_hr).concat([1]));
+  const P={hrl:"M30,70 L690,70",hrr:"M690,130 L30,130",vwa:"M470,130 C470,180 440,195 412,226",vwd:"M328,226 C300,195 230,185 230,130"};
+  const T={hrl:[36,36,"start"],hrr:[684,158,"end"],vwa:[480,196,"start"],vwd:[222,196,"end"]};
+  let s='<rect x="30" y="78" width="660" height="44" rx="8" fill="#ecfdf3"/><text x="360" y="104" text-anchor="middle" class="msub">A27</text>';
+  s+='<rect x="300" y="226" width="140" height="48" rx="12" fill="#eef2ff" stroke="#c7d2fe"/><text x="370" y="256" text-anchor="middle" class="city">Breda</text>';
+  SITES.forEach(id=>{
+    const f=by[id].intensity_veh_per_hr,sh=f/mx,w=7+sh*11,dur=(2.8-2*sh).toFixed(2);
+    const anim=f>0?'style="animation-duration:'+dur+'s"':'style="animation:none"';
+    s+='<g><title>'+id+': '+int(f)+' veh/h</title>'
+      +'<path d="'+P[id]+'" stroke="#d0d5dd" stroke-width="'+(w+8)+'" fill="none" stroke-linecap="round"/>'
+      +'<path class="car" d="'+P[id]+'" stroke="'+C[id]+'" stroke-width="'+w+'" fill="none" stroke-linecap="round" stroke-dasharray="1 22" '+anim+'/></g>';
+    const t=T[id];
+    s+='<text class="mlabel" x="'+t[0]+'" y="'+t[1]+'" text-anchor="'+t[2]+'" fill="'+C[id]+'">'+id+' \u00b7 '+int(f)+' veh/h</text>'
+      +'<text class="msub" x="'+t[0]+'" y="'+(t[1]+14)+'" text-anchor="'+t[2]+'">'+NAMES[id]+'</text>';
+  });
+  $("map").innerHTML=s;
+}
+
+function drawSites(sites){
+  const tot=sites.reduce((a,s)=>a+s.intensity_veh_per_hr,0)||1;
+  $("sites").innerHTML=sites.map(s=>{
+    const sh=s.intensity_veh_per_hr/tot*100;
+    return '<div class="scard" style="border-top:4px solid '+C[s.site_id]+'"><b>'+s.site_id+'</b><div class="note">'+NAMES[s.site_id]+'</div>'
+      +'<div class="sbig">'+int(s.intensity_veh_per_hr)+' <small>veh/h</small></div>'
+      +'<div class="share"><i style="width:'+sh+'%;background:'+C[s.site_id]+'"></i></div>'
+      +'<div class="note">'+Math.round(sh)+'% of interchange traffic \u00b7 hour from '+clock(s.traffic_hour)+' \u00b7 '+s.samples+' snapshots</div></div>';
+  }).join("");
+}
+
+function drawChart(h){
+  if(typeof Chart==="undefined"){return;}
+  const hours=h.hours,labels=hours.map(r=>clock(r.hour));
+  const bar=s=>({type:"bar",label:s,data:hours.map(r=>(r.sites&&r.sites[s]!==undefined)?r.sites[s]:null),backgroundColor:C[s],stack:"traffic",yAxisID:"y",order:2});
+  const ds=[bar("hrl"),bar("hrr"),bar("vwd"),bar("vwa"),
+    {type:"line",label:"NO2 measured",data:hours.map(r=>r.no2),borderColor:"#101828",backgroundColor:"#101828",yAxisID:"y1",tension:.3,pointRadius:3,order:0,spanGaps:true},
+    {type:"line",label:"NO2 predicted",data:hours.map(r=>r.pred),borderColor:"#f04438",backgroundColor:"#f04438",borderDash:[6,4],yAxisID:"y1",tension:.3,pointRadius:3,order:0},
+    {type:"line",label:"40 reference",data:hours.map(()=>h.threshold),borderColor:"#98a2b3",borderDash:[2,4],borderWidth:1.5,pointRadius:0,yAxisID:"y1",order:1}];
+  if(!chart){
+    chart=new Chart($("chart"),{type:"bar",data:{labels:labels,datasets:ds},options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{mode:"index",intersect:false},
+      plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8}}},
+      scales:{x:{stacked:true},
+        y:{stacked:true,beginAtZero:true,position:"left",title:{display:true,text:"Traffic (veh/h)"}},
+        y1:{beginAtZero:true,suggestedMax:50,position:"right",grid:{drawOnChartArea:false},title:{display:true,text:"NO2 (\u00b5g/m\u00b3)"}}}}});
+  }else{chart.data.labels=labels;chart.data.datasets=ds;chart.update("none");}
+}
+
+function statusCards(health,m){
+  const s=health.sources;
+  const defs=[["Luchtmeetnet (NO\u2082)",s[0],180,"One reading per hour","flagged as stale or null"],
+              ["NDW (traffic)",s[1],30,"Snapshot every 10 minutes","speed = -1 kept out of the data"]];
+  let html=defs.map(d=>{
+    const x=d[1],old=ageMin(x.last_successful_fetch)>d[2];
+    return '<div class="card" style="margin:0"><div><span class="sdot" style="background:'+(old?"#f04438":"#12b76a")+'"></span><b>'+d[0]+'</b></div>'
+      +'<div class="note">'+d[3]+'</div>'
+      +'<div style="margin-top:6px">Last data: <b>'+clock(x.last_successful_fetch)+'</b> ('+ago(x.last_successful_fetch)+')</div>'
+      +'<div class="note">Last 24 h: '+x.bad_data_count+' readings '+d[4]+'</div></div>';}).join("");
+  const rows=m.rows||0,pct=Math.min(100,rows/24*100);
+  html+='<div class="card" style="margin:0"><b>Model training data</b><div class="note">Hourly rows collected (goal: 24, one full day)</div>'
+    +'<div class="share"><i style="width:'+pct+'%;background:#6366f1"></i></div>'
+    +'<div>'+rows+' / 24 rows'+(m.r2!=null?' \u00b7 R\u00b2 '+m.r2+' \u00b7 typical error '+m.mae+' \u00b5g/m\u00b3':'')+'</div>'
+    +'<div class="note">'+(m.in_sample?'Scores are in-sample only. ':'')+'Last trained '+(m.trained_at?stamp(m.trained_at):'n/a')+'.</div></div>';
+  return html;
+}
+
+function render(sites,hist,health){
+  const f=sites[0],tot=sites.reduce((a,s)=>a+s.intensity_veh_per_hr,0);
+  const lv=level(f.no2_ug_m3);
+  $("hero").className="card hero "+lv[1];
+  $("dot").style.background=COL[lv[1]];$("dot").textContent=lv[2];
+  $("lvl").textContent="NO\u2082 level: "+lv[0];
+  let t="Measured NO\u2082 is "+num(f.no2_ug_m3)+" \u00b5g/m\u00b3, which is "+Math.round(f.no2_ug_m3/REF*100)+"% of the "+REF+" \u00b5g/m\u00b3 reference (hour ending "+clock(f.timestamp)+").";
+  if(f.no2_ug_m3_predicted!==null){const d=f.no2_ug_m3_predicted-f.no2_ug_m3;t+=" The model predicted "+num(f.no2_ug_m3_predicted)+" ("+(d>=0?"+":"")+num(d)+" off).";}
+  else{t+=" The prediction is unavailable right now, but the real readings are still shown.";}
+  $("sentence").textContent=t;
+  const r=f.no2_exceedance_risk;
+  $("riskVal").textContent=r===null?"n/a":num(r,2);
+  $("riskBar").style.width=(r===null?0:r*100)+"%";
+  $("riskBar").style.background=r===null?"#98a2b3":(r<.33?COL.good:r<.66?COL.mid:COL.bad);
+  gauge("g1",f.no2_ug_m3);gauge("g2",f.no2_ug_m3_predicted);
+  $("total").textContent=int(tot);
+  drawMap(sites);drawSites(sites);
+  $("status").innerHTML=statusCards(health,hist.model||{});
+  const s=health.sources,airOld=ageMin(s[0].last_successful_fetch)>180,ndwOld=ageMin(s[1].last_successful_fetch)>30,p=$("pill");
+  if(airOld||ndwOld){p.className="pill bad";p.textContent="Ingestion stale: "+(ndwOld?"NDW":"Luchtmeetnet")+" has stopped";}
+  else{p.className="pill ok";p.textContent="Ingestion running";}
+  $("updated").textContent="Updated "+clock(new Date().toISOString())+" (Europe/Amsterdam). Refreshes every 60 s.";
+  drawChart(hist);
+}
+
+async function load(){
+  let data;
+  try{
+    const get=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u+" "+r.status);return r.json();});
+    data=await Promise.all([Promise.all(SITES.map(s=>get("/site/"+s))),get("/history"),get("/health")]);
+  }catch(e){const p=$("pill");p.className="pill bad";p.textContent="Connection problem, retrying...";console.error(e);return;}
+  try{render(data[0],data[1],data[2]);}
+  catch(e){console.error(e);const p=$("pill");p.className="pill bad";p.textContent="Display error (see browser console)";}
+}
+load();setInterval(load,60000);
+</script></body></html>
